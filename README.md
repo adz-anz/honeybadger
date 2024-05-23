@@ -7,12 +7,9 @@ It was inspired by, and takes influence from, the [**`honeymarker`**](https://gi
 ## Installation
 
 ```shell
-$ git clone git@github.com:adz-anz/honeybadger.git
-$ cd honeybadger
-$ go build && ./honeybadger
+$ go install github.com/honeycombio/honeymarker@latest
+$ honeymarker    # (if $GOPATH/bin is in your path.)
 ```
-
-> [!NOTE] > **TODO:** Verify whether `go install github.com/adz-anz/honeybadger@latest` can be used to install this tool directly from GitHub.
 
 ## Usage
 
