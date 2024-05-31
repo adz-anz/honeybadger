@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	configKey string
-	apiHost   string
-	dataset   string
+	configKey     string
+	apiHost       string
+	targetDataset string
+	dryRun		  bool
 )
 
 const (
@@ -132,6 +133,7 @@ func NewHoneybadgerCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&apiHost, "api_host",
 		"https://api.honeycomb.io/", "The host to query, don't change it unless it's a hosted Honeycomb environment.")
 	cmd.PersistentFlags().MarkHidden("api_host")
+	cmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print the request that would be sent without actually sending it.")
 
 	setCommandGroups(cmd, []commandGroup{
 		{
@@ -159,13 +161,13 @@ func NewHoneybadgerCmd() *cobra.Command {
 		// 		newDerivedColumnsCmd(),
 		// 	},
 		// },
-		// {
-		// 	Name: "Dataset Commands",
-		// 	Commands: []*cobra.Command{
-		// 		newDatasetsCmd(),
-		// 		newDatasetDefinitionsCmd(),
-		// 	},
-		// },
+		{
+			Name: "Dataset Commands",
+			Commands: []*cobra.Command{
+				newDatasetsCmd(),
+				newDatasetDefinitionsCmd(),
+			},
+		},
 		// {
 		// 	Name: "Event Commands",
 		// 	Commands: []*cobra.Command{

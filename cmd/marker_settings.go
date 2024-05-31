@@ -40,9 +40,8 @@ func newMarkerSettingsCmd() *cobra.Command {
 			"These commands allow you to list, create, update, and delete Marker Settings.",
 	}
 
-	cmd.PersistentFlags().StringVarP(&dataset, "dataset", "d", "__all__",
+	cmd.PersistentFlags().StringVarP(&targetDataset, "dataset", "d", "__all__",
 		"The dataset slug or use __all__ (or omit) for endpoints that support environment-wide operations.")
-	cmd.MarkPersistentFlagRequired("dataset")
 
 	cmd.AddCommand(
 		newMarkersSettingsCreateCmd(),
@@ -76,23 +75,24 @@ func newMarkersSettingsCreateCmd() *cobra.Command {
 			var bodyMarshal, err = json.Marshal(ms)
 			if err != nil {
 				log.WithFields(log.Fields{
-					"_function": "newMarkersSettingsCreateCmd",
-					"err": err,
+					"_function":      "newMarkersSettingsCreateCmd",
+					"err":            err,
 					"marker_setting": ms,
 				}).Fatal("Error received when attempting to marshal a marker setting.")
 			}
 			var p = Payload{
-				Method: http.MethodPost,
-				Path:   "/1/marker_settings/" + dataset,
-				Body:   bodyMarshal,
+				Method:   http.MethodPost,
+				Path:     "/1/marker_settings/" + targetDataset,
+				Body:     bodyMarshal,
+				Response: &markerSettings{},
 			}
 
-			err = p.Execute()
+			err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsCreateCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to create a new marker setting.")
 			}
 		},
@@ -119,16 +119,17 @@ func newMarkersSettingsGetCmd() *cobra.Command {
 		Example: `Example`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var p = Payload{
-				Method: http.MethodGet,
-				Path:   "/1/marker_settings/" + dataset,
+				Method:   http.MethodGet,
+				Path:     "/1/marker_settings/" + targetDataset,
+				Response: &[]markerSettings{},
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsGetCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to list all marker settings.")
 			}
 		},
@@ -162,23 +163,24 @@ func newMarkersSettingsUpdateCmd() *cobra.Command {
 			var bodyMarshal, err = json.Marshal(ms)
 			if err != nil {
 				log.WithFields(log.Fields{
-					"_function": "newMarkersSettingsUpdateCmd",
-					"err": err,
+					"_function":      "newMarkersSettingsUpdateCmd",
+					"err":            err,
 					"marker_setting": ms,
 				}).Fatal("Error received when attempting to marshal a marker setting.")
 			}
 			var p = Payload{
-				Method: http.MethodPut,
-				Path:   "/1/markers/" + dataset + "/" + ms.ID,
-				Body:   bodyMarshal,
+				Method:   http.MethodPut,
+				Path:     "/1/markers/" + targetDataset + "/" + ms.ID,
+				Body:     bodyMarshal,
+				Response: &markerSettings{},
 			}
 
-			err = p.Execute()
+			err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsUpdateCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to update a marker setting.")
 			}
 		},
@@ -213,16 +215,17 @@ func newMarkersSettingsDeleteCmd() *cobra.Command {
 				ID: msId,
 			}
 			var p = Payload{
-				Method: http.MethodDelete,
-				Path:   "/1/marker_settings/" + dataset + "/" + ms.ID,
+				Method:   http.MethodDelete,
+				Path:     "/1/marker_settings/" + targetDataset + "/" + ms.ID,
+				Response: nil,
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsDeleteCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to delete a marker setting.")
 			}
 		},

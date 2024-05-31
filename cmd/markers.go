@@ -55,9 +55,8 @@ func newMarkersCmd() *cobra.Command {
 			"These commands allow you to list, create, update, and delete Markers.",
 	}
 
-	cmd.PersistentFlags().StringVarP(&dataset, "dataset", "d", "__all__",
+	cmd.PersistentFlags().StringVarP(&targetDataset, "dataset", "d", "__all__",
 		"The dataset slug or use __all__ (or omit) for endpoints that support environment-wide operations.")
-	cmd.MarkPersistentFlagRequired("dataset")
 
 	cmd.AddCommand(
 		newMarkersCreateCmd(),
@@ -98,22 +97,23 @@ func newMarkersCreateCmd() *cobra.Command {
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersCreateCmd",
-					"err": err,
-					"marker": m,
+					"err":       err,
+					"marker":    m,
 				}).Fatal("Error received when attempting to marshal a marker.")
 			}
 			var p = Payload{
-				Method: http.MethodPost,
-				Path:   "/1/markers/" + dataset,
-				Body:   bodyMarshal,
+				Method:   http.MethodPost,
+				Path:     "/1/markers/" + targetDataset,
+				Body:     bodyMarshal,
+				Response: &marker{},
 			}
 
-			err = p.Execute()
+			err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersCreateCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to create a new marker.")
 			}
 		},
@@ -143,16 +143,17 @@ func newMarkersListCmd() *cobra.Command {
 			"dataset (or omit the dataset) and an API key associated with the desired environment.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var p = Payload{
-				Method: http.MethodGet,
-				Path:   "/1/markers/" + dataset,
+				Method:   http.MethodGet,
+				Path:     "/1/markers/" + targetDataset,
+				Response: &[]marker{},
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersListCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to list all markers.")
 			}
 		},
@@ -191,22 +192,23 @@ func newMarkersUpdateCmd() *cobra.Command {
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersUpdateCmd",
-					"err": err,
-					"marker": m,
+					"err":       err,
+					"marker":    m,
 				}).Fatal("Error received when attempting to marshal a marker.")
 			}
 			var p = Payload{
-				Method: http.MethodPut,
-				Path:   "/1/markers/" + dataset + "/" + m.ID,
-				Body:   bodyMarshal,
+				Method:   http.MethodPut,
+				Path:     "/1/markers/" + targetDataset + "/" + m.ID,
+				Body:     bodyMarshal,
+				Response: &marker{},
 			}
 
-			err = p.Execute()
+			err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersUpdateCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to update an existing marker.")
 			}
 		},
@@ -245,16 +247,17 @@ func newMarkersDeleteCmd() *cobra.Command {
 				ID: mId,
 			}
 			var p = Payload{
-				Method: http.MethodDelete,
-				Path:   "/1/markers/" + dataset + "/" + m.ID,
+				Method:   http.MethodDelete,
+				Path:     "/1/markers/" + targetDataset + "/" + m.ID,
+				Response: &marker{},
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersDeleteCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to delete an existing marker.")
 			}
 		},

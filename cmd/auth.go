@@ -41,9 +41,9 @@ type auth struct {
 // https://docs.honeycomb.io/api/tag/Auth
 func newAuthCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "auth",
+		Use:     "auth",
 		Aliases: []string{"a"},
-		Short: "Manage API keys",
+		Short:   "Manage API keys",
 		Long: "API keys can have various permissions and belong to a specific Environment.\n" +
 			"\n" +
 			"This command can be used to validate authentication for a key, to determine\n" +
@@ -70,16 +70,17 @@ func newAuthListCmd() *cobra.Command {
 			"environment values.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var p = Payload{
-				Method: http.MethodGet,
-				Path:   "/1/auth",
+				Method:   http.MethodGet,
+				Path:     "/1/auth",
+				Response: &auth{},
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newAuthListCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to list authorizations.")
 			}
 		},

@@ -10,12 +10,12 @@ import (
 )
 
 type boardGraphSettings struct {
-	HideMarkers       bool `json:"hide_markers,omitempty"`
-	LogScale          bool `json:"log_scale,omitempty"`
-	OmitMissingValues bool `json:"omit_missing_values,omitempty"`
-	StackedGraphs     bool `json:"stacked_graphs,omitempty"`
-	UTCXaxis          bool `json:"utc_xaxis,omitempty"`
-	OverlaidCharts    bool `json:"overlaid_charts,omitempty"`
+	HideMarkers       bool `json:"hide_markers"`
+	LogScale          bool `json:"log_scale"`
+	OmitMissingValues bool `json:"omit_missing_values"`
+	StackedGraphs     bool `json:"stacked_graphs"`
+	UTCXAxis          bool `json:"utc_xaxis"`
+	OverlaidCharts    bool `json:"overlaid_charts"`
 }
 
 type boardQuery struct {
@@ -43,9 +43,9 @@ type board struct {
 
 func newBoardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "boards",
+		Use:     "boards",
 		Aliases: []string{"b"},
-		Short: "Manage Boards",
+		Short:   "Manage Boards",
 		Long: "Boards are a place to pin and save useful queries and graphs you want to\n" +
 			"retain for later reuse and reference.\n" +
 			"\n" +
@@ -57,6 +57,121 @@ func newBoardsCmd() *cobra.Command {
 	cmd.AddCommand(newBoardsGetCmd())
 	cmd.AddCommand(newBoardsUpdateCmd())
 	cmd.AddCommand(newBoardsDeleteCmd())
+	cmd.AddCommand(newBoardsAddQueryCmd())
+	// cmd.AddCommand(newBoardsUpdateQueryCmd())
+	// cmd.AddCommand(newBoardsDeleteQueryCmd())
+
+	return cmd
+}
+
+// Add a query to a Board
+// CUSTOM
+func newBoardsAddQueryCmd() *cobra.Command {
+	var (
+		bId                                  string
+		bQueryCaption                        string
+		bQueryGraphSettingsHideMarkers       bool
+		bQueryGraphSettingsLogScale          bool
+		bQueryGraphSettingsOmitMissingValues bool
+		bQueryGraphSettingsStackedGraphs     bool
+		bQueryGraphSettingsUTCXAxis          bool
+		bQueryGraphSettingsOverlaidCharts    bool
+		bQueryStyle                          string
+		bQueryDataset                        string
+		bQueryId                             string
+		bQueryAnnotationId                   string
+	)
+
+	cmd := &cobra.Command{
+		Use:     "add_query",
+		Aliases: []string{"aq"},
+		Short:   "Add a Query to a Board.",
+		Long:    "Add a Query to a Board.",
+		Run: func(cmd *cobra.Command, args []string) {
+			// Get the board first, so we can append a new query to it.
+			var pGet = Payload{
+				Method:   http.MethodGet,
+				Path:     "/1/boards/" + bId,
+				Response: &board{},
+			}
+
+			var err = pGet.GetResponse()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"_function": "newBoardsAddQueryCmd",
+					"err":       err,
+					"payload":   pGet,
+				}).Fatal("Error received when attempting to get the board to update.")
+			}
+
+			// Update the returned board with the new query.
+			pGet.Response.(*board).Queries = append(pGet.Response.(*board).Queries, boardQuery{
+				Caption: bQueryCaption,
+				GraphSettings: boardGraphSettings{
+					HideMarkers:       bQueryGraphSettingsHideMarkers,
+					LogScale:          bQueryGraphSettingsLogScale,
+					OmitMissingValues: bQueryGraphSettingsOmitMissingValues,
+					StackedGraphs:     bQueryGraphSettingsStackedGraphs,
+					UTCXAxis:          bQueryGraphSettingsUTCXAxis,
+					OverlaidCharts:    bQueryGraphSettingsOverlaidCharts,
+				},
+				QueryStyle:        bQueryStyle,
+				Dataset:           bQueryDataset,
+				QueryID:           bQueryId,
+				QueryAnnotationID: bQueryAnnotationId,
+			})
+
+			bodyMarshal, err := json.Marshal(pGet.Response)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"_function": "newBoardsAddQueryCmd",
+					"err":       err,
+					"board":     pGet.Response,
+				}).Fatal("Error received when attempting to marshal a board.")
+			}
+			var pPut = Payload{
+				Method:   http.MethodPut,
+				Path:     "/1/boards/" + bId,
+				Body:     bodyMarshal,
+				Response: &board{},
+			}
+
+			err = pPut.PrintResponse()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"_function": "newBoardsAddQueryCmd",
+					"err":       err,
+					"payload":   pPut,
+				}).Fatal("Error received when attempting to add a new query to a board.")
+			}
+		},
+	}
+
+	cmd.Flags().StringVarP(&bId, "id", "i", "",
+		"The unique identifier (ID) of a Board.")
+	cmd.MarkFlagRequired("id")
+	cmd.Flags().StringVarP(&bQueryCaption, "caption", "c", "",
+		"Descriptive text to contextualize the value of the Query within the Board.")
+	cmd.Flags().BoolVarP(&bQueryGraphSettingsHideMarkers, "hide_mdarkers", "H", false,
+		"Hide markers on the graph.")
+	cmd.Flags().BoolVarP(&bQueryGraphSettingsLogScale, "log_scale", "L", false,
+		"Use a log scale, rather than a linear scale.")
+	cmd.Flags().BoolVarP(&bQueryGraphSettingsOmitMissingValues, "omit_missing", "O", false,
+		"Omit missing values from the graph.")
+	cmd.Flags().BoolVarP(&bQueryGraphSettingsStackedGraphs, "stacked_graphs", "S", false,
+		"Display groups as stacked colored areas under their line graphs.")
+	cmd.Flags().BoolVarP(&bQueryGraphSettingsUTCXAxis, "utx_axis", "U", false,
+		"Displays the X axis in Coordinated Universal Time, the time at 0° longitude.")
+	cmd.Flags().BoolVarP(&bQueryGraphSettingsOverlaidCharts, "overlaid_charts", "V", false,
+		"Combines any visualized AVG, MIN, MAX, and PERCENTILE clauses into a single chart.")
+	cmd.Flags().StringVarP(&bQueryStyle, "style", "s", "",
+		"How the query should be displayed on the board. Enum: \"graph\" \"table\" \"combo\"")
+	cmd.Flags().StringVarP(&bQueryDataset, "dataset", "d", "",
+		"The Dataset to Query. Required if using the deprecated query. Note: this field can take either name (\"My Dataset\") or slug (\"my_dataset\"); the response will always use the name.")
+	cmd.Flags().StringVarP(&bQueryId, "query_id", "q", "",
+		"The ID of a Query object. Cannot be used with query. Query IDs can be retrieved from the UI or from the Query API.")
+	cmd.Flags().StringVarP(&bQueryAnnotationId, "annotation_id", "a", "",
+		"The ID of a Query Annotation that provides a name and description for the Query. The Query Annotation must apply to the query_id or query specified.")
 
 	return cmd
 }
@@ -65,109 +180,44 @@ func newBoardsCmd() *cobra.Command {
 // https://docs.honeycomb.io/api/tag/Boards#operation/createBoard
 func newBoardsCreateCmd() *cobra.Command {
 	var (
-		bName                                string
-		bDescription                         string
-		bColumnLayout                        string
-		bQueryCaptions                       []string
-		bQueryGraphSettingsHideMarkers       []bool
-		bQueryGraphSettingsLogScale          []bool
-		bQueryGraphSettingsOmitMissingValues []bool
-		bQueryGraphSettingsStackedGraphs     []bool
-		bQueryGraphSettingsUTCXAxis          []bool
-		bQueryGraphSettingsOverlaidCharts    []bool
-		bQueryStyle                          []string
-		bQueryDataset                        []string
-		bQueryId                             []string
-		bQueryAnnotationId                   []string
-		bQueryLength                         int
+		bName         string
+		bDescription  string
+		bColumnLayout string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "create",
+		Use:     "create",
 		Aliases: []string{"add", "new"},
-		Short: "Create a Board comprised of one or more Queries.",
-		Long:  "Create a Board comprised of one or more Queries.",
+		Short:   "Create a Board.",
+		Long:    "Create a Board without any Queries - these can be added after creation.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var b = board{
 				Name:         bName,
 				Description:  bDescription,
 				ColumnLayout: bColumnLayout,
-				Queries:      []boardQuery{},
 			}
 
-			bQueryLength = max(
-				len(bQueryCaptions),
-				len(bQueryGraphSettingsHideMarkers),
-				len(bQueryGraphSettingsLogScale),
-				len(bQueryGraphSettingsOmitMissingValues),
-				len(bQueryGraphSettingsStackedGraphs),
-				len(bQueryGraphSettingsUTCXAxis),
-				len(bQueryGraphSettingsOverlaidCharts),
-				len(bQueryStyle),
-				len(bQueryDataset),
-				len(bQueryId),
-				len(bQueryAnnotationId),
-			)
-
-			for idx := 0; idx < bQueryLength; idx++ {
-				var newBoardQuery boardQuery
-
-				if len(bQueryCaptions) > idx {
-					newBoardQuery.Caption = bQueryCaptions[idx]
-				}
-				if len(bQueryGraphSettingsHideMarkers) > idx {
-					newBoardQuery.GraphSettings.HideMarkers = bQueryGraphSettingsHideMarkers[idx]
-				}
-				if len(bQueryGraphSettingsLogScale) > idx {
-					newBoardQuery.GraphSettings.LogScale = bQueryGraphSettingsLogScale[idx]
-				}
-				if len(bQueryGraphSettingsOmitMissingValues) > idx {
-					newBoardQuery.GraphSettings.OmitMissingValues = bQueryGraphSettingsOmitMissingValues[idx]
-				}
-				if len(bQueryGraphSettingsStackedGraphs) > idx {
-					newBoardQuery.GraphSettings.StackedGraphs = bQueryGraphSettingsStackedGraphs[idx]
-				}
-				if len(bQueryGraphSettingsUTCXAxis) > idx {
-					newBoardQuery.GraphSettings.UTCXaxis = bQueryGraphSettingsUTCXAxis[idx]
-				}
-				if len(bQueryGraphSettingsOverlaidCharts) > idx {
-					newBoardQuery.GraphSettings.OverlaidCharts = bQueryGraphSettingsOverlaidCharts[idx]
-				}
-				if len(bQueryStyle) > idx {
-					newBoardQuery.QueryStyle = bQueryStyle[idx]
-				}
-				if len(bQueryDataset) > idx {
-					newBoardQuery.Dataset = bQueryDataset[idx]
-				}
-				if len(bQueryId) > idx {
-					newBoardQuery.QueryID = bQueryId[idx]
-				}
-				if len(bQueryAnnotationId) > idx {
-					newBoardQuery.QueryAnnotationID = bQueryAnnotationId[idx]
-				}
-
-				b.Queries = append(b.Queries, newBoardQuery)
-			}
 			var bodyMarshal, err = json.Marshal(b)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsCreateCmd",
-					"err": err,
-					"board": b,
+					"err":       err,
+					"board":     b,
 				}).Fatal("Error received when attempting to marshal a board.")
 			}
 			var p = Payload{
-				Method: http.MethodPost,
-				Path:   "/1/boards",
-				Body:   bodyMarshal,
+				Method:   http.MethodPost,
+				Path:     "/1/boards",
+				Body:     bodyMarshal,
+				Response: &board{},
 			}
 
-			err = p.Execute()
+			err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsCreateCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to create a new board.")
 			}
 		},
@@ -179,28 +229,6 @@ func newBoardsCreateCmd() *cobra.Command {
 		"A description of the Board.")
 	cmd.Flags().StringVarP(&bColumnLayout, "column_layout", "c", "",
 		"The number of columns to layout on the board.")
-	cmd.Flags().StringArrayVar(&bQueryCaptions, "qc", nil,
-		"Descriptive text to contextualize the value of the Query within the Board.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsHideMarkers, "qgshm", nil,
-		"Hide markers on the graph.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsLogScale, "qgsls", nil,
-		"Use a log scale, rather than a linear scale.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsOmitMissingValues, "qgsomv", nil,
-		"Omit missing values from the graph.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsStackedGraphs, "qgssg", nil,
-		"Display groups as stacked colored areas under their line graphs.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsUTCXAxis, "qgsuxa", nil,
-		"Displays the X axis in Coordinated Universal Time, the time at 0° longitude.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsOverlaidCharts, "qgsoc", nil,
-		"Combines any visualized AVG, MIN, MAX, and PERCENTILE clauses into a single chart.")
-	cmd.Flags().StringArrayVar(&bQueryStyle, "qs", nil,
-		"How the query should be displayed on the board. Enum: \"graph\" \"table\" \"combo\"")
-	cmd.Flags().StringArrayVar(&bQueryDataset, "qd", nil,
-		"The Dataset to Query. Required if using the deprecated query. Note: this field can take either name (\"My Dataset\") or slug (\"my_dataset\"); the response will always use the name.")
-	cmd.Flags().StringArrayVar(&bQueryId, "qid", nil,
-		"The ID of a Query object. Cannot be used with query. Query IDs can be retrieved from the UI or from the Query API.")
-	cmd.Flags().StringArrayVar(&bQueryAnnotationId, "qaid", nil,
-		"The ID of a Query Annotation that provides a name and description for the Query. The Query Annotation must apply to the query_id or query specified.")
 
 	return cmd
 }
@@ -217,16 +245,17 @@ func newBoardsListCmd() *cobra.Command {
 			"Note: For Honeycomb Classic users, all boards within Classic will be returned.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var p = Payload{
-				Method: http.MethodGet,
-				Path:   "/1/boards",
+				Method:   http.MethodGet,
+				Path:     "/1/boards",
+				Response: &[]board{},
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsListCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to list boards.")
 			}
 		},
@@ -247,16 +276,17 @@ func newBoardsGetCmd() *cobra.Command {
 		Long:    "Get a single Board by ID.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var p = Payload{
-				Method: http.MethodGet,
-				Path:   "/1/boards/" + bId,
+				Method:   http.MethodGet,
+				Path:     "/1/boards/" + bId,
+				Response: &board{},
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsGetCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to get a single board.")
 			}
 		},
@@ -274,106 +304,58 @@ func newBoardsUpdateCmd() *cobra.Command {
 		bName                                string
 		bDescription                         string
 		bColumnLayout                        string
-		bQueryCaptions                       []string
-		bQueryGraphSettingsHideMarkers       []bool
-		bQueryGraphSettingsLogScale          []bool
-		bQueryGraphSettingsOmitMissingValues []bool
-		bQueryGraphSettingsStackedGraphs     []bool
-		bQueryGraphSettingsUTCXAxis          []bool
-		bQueryGraphSettingsOverlaidCharts    []bool
-		bQueryStyle                          []string
-		bQueryDataset                        []string
-		bQueryId                             []string
-		bQueryAnnotationId                   []string
-		bQueryLength                         int
 	)
 
 	cmd := &cobra.Command{
-		Use:   "update",
+		Use:     "update",
 		Aliases: []string{"up", "edit", "modify", "change", "set"},
-		Short: "Update a Board by ID.",
-		Long:  "Update a Board by ID.",
+		Short:   "Update a Board by ID.",
+		Long:    "Update a Board by ID, leaving existing queries as-is.",
 		Run: func(cmd *cobra.Command, args []string) {
+			// Get the board first, so we can append a new query to it.
+			var pGet = Payload{
+				Method:   http.MethodGet,
+				Path:     "/1/boards/" + bId,
+				Response: &board{},
+			}
+
+			var err = pGet.GetResponse()
+			if err != nil {
+				log.WithFields(log.Fields{
+					"_function": "newBoardsUpdateCmd",
+					"err":       err,
+					"payload":   pGet,
+				}).Fatal("Error received when attempting to get the board to update.")
+			}
+
 			var b = board{
 				Name:         bName,
 				Description:  bDescription,
 				ColumnLayout: bColumnLayout,
-				Queries:      []boardQuery{},
+				Queries:      pGet.Response.(*board).Queries,
 			}
 
-			bQueryLength = max(
-				len(bQueryCaptions),
-				len(bQueryGraphSettingsHideMarkers),
-				len(bQueryGraphSettingsLogScale),
-				len(bQueryGraphSettingsOmitMissingValues),
-				len(bQueryGraphSettingsStackedGraphs),
-				len(bQueryGraphSettingsUTCXAxis),
-				len(bQueryGraphSettingsOverlaidCharts),
-				len(bQueryStyle),
-				len(bQueryDataset),
-				len(bQueryId),
-				len(bQueryAnnotationId),
-			)
-
-			for idx := 0; idx < bQueryLength; idx++ {
-				var newBoardQuery boardQuery
-
-				if len(bQueryCaptions) > idx {
-					newBoardQuery.Caption = bQueryCaptions[idx]
-				}
-				if len(bQueryGraphSettingsHideMarkers) > idx {
-					newBoardQuery.GraphSettings.HideMarkers = bQueryGraphSettingsHideMarkers[idx]
-				}
-				if len(bQueryGraphSettingsLogScale) > idx {
-					newBoardQuery.GraphSettings.LogScale = bQueryGraphSettingsLogScale[idx]
-				}
-				if len(bQueryGraphSettingsOmitMissingValues) > idx {
-					newBoardQuery.GraphSettings.OmitMissingValues = bQueryGraphSettingsOmitMissingValues[idx]
-				}
-				if len(bQueryGraphSettingsStackedGraphs) > idx {
-					newBoardQuery.GraphSettings.StackedGraphs = bQueryGraphSettingsStackedGraphs[idx]
-				}
-				if len(bQueryGraphSettingsUTCXAxis) > idx {
-					newBoardQuery.GraphSettings.UTCXaxis = bQueryGraphSettingsUTCXAxis[idx]
-				}
-				if len(bQueryGraphSettingsOverlaidCharts) > idx {
-					newBoardQuery.GraphSettings.OverlaidCharts = bQueryGraphSettingsOverlaidCharts[idx]
-				}
-				if len(bQueryStyle) > idx {
-					newBoardQuery.QueryStyle = bQueryStyle[idx]
-				}
-				if len(bQueryDataset) > idx {
-					newBoardQuery.Dataset = bQueryDataset[idx]
-				}
-				if len(bQueryId) > idx {
-					newBoardQuery.QueryID = bQueryId[idx]
-				}
-				if len(bQueryAnnotationId) > idx {
-					newBoardQuery.QueryAnnotationID = bQueryAnnotationId[idx]
-				}
-
-				b.Queries = append(b.Queries, newBoardQuery)
-			}
-			var bodyMarshal, err = json.Marshal(b)
+			bodyMarshal, err := json.Marshal(b)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsUpdateCmd",
-					"err": err,
-					"board": b,
+					"err":       err,
+					"board":     b,
 				}).Fatal("Error received when attempting to marshal a board.")
 			}
-			var p = Payload{
-				Method: http.MethodPut,
-				Path:   "/1/boards/" + bId,
-				Body:   bodyMarshal,
+			var pPut = Payload{
+				Method:   http.MethodPut,
+				Path:     "/1/boards/" + bId,
+				Body:     bodyMarshal,
+				Response: &board{},
 			}
 
-			err = p.Execute()
+			err = pPut.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsUpdateCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   pPut,
 				}).Fatal("Error received when attempting to update an existing board.")
 			}
 		},
@@ -387,28 +369,6 @@ func newBoardsUpdateCmd() *cobra.Command {
 		"A description of the Board.")
 	cmd.Flags().StringVarP(&bColumnLayout, "column_layout", "c", "",
 		"The number of columns to layout on the board.")
-	cmd.Flags().StringArrayVar(&bQueryCaptions, "qc", nil,
-		"Descriptive text to contextualize the value of the Query within the Board.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsHideMarkers, "qgshm", nil,
-		"Hide markers on the graph.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsLogScale, "qgsls", nil,
-		"Use a log scale, rather than a linear scale.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsOmitMissingValues, "qgsomv", nil,
-		"Omit missing values from the graph.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsStackedGraphs, "qgssg", nil,
-		"Display groups as stacked colored areas under their line graphs.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsUTCXAxis, "qgsux", nil,
-		"Displays the X axis in Coordinated Universal Time, the time at 0° longitude.")
-	cmd.Flags().BoolSliceVar(&bQueryGraphSettingsOverlaidCharts, "qgsoc", nil,
-		"Combines any visualized AVG, MIN, MAX, and PERCENTILE clauses into a single chart.")
-	cmd.Flags().StringArrayVar(&bQueryStyle, "qs", nil,
-		"How the query should be displayed on the board. Enum: \"graph\" \"table\" \"combo\"")
-	cmd.Flags().StringArrayVar(&bQueryDataset, "qd", nil,
-		"The Dataset to Query. Required if using the deprecated query. Note: this field can take either name (\"My Dataset\") or slug (\"my_dataset\"); the response will always use the name.")
-	cmd.Flags().StringArrayVar(&bQueryId, "qid", nil,
-		"The ID of a Query object. Cannot be used with query. Query IDs can be retrieved from the UI or from the Query API.")
-	cmd.Flags().StringArrayVar(&bQueryAnnotationId, "qaid", nil,
-		"The ID of a Query Annotation that provides a name and description for the Query. The Query Annotation must apply to the query_id or query specified.")
 
 	return cmd
 }
@@ -425,16 +385,17 @@ func newBoardsDeleteCmd() *cobra.Command {
 		Long:    "Delete a single Board by ID.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var p = Payload{
-				Method: http.MethodDelete,
-				Path:   "/1/boards/" + bId,
+				Method:   http.MethodDelete,
+				Path:     "/1/boards/" + bId,
+				Response: nil,
 			}
 
-			var err = p.Execute()
+			var err = p.PrintResponse()
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsDeleteCmd",
-					"err": err,
-					"payload": p,
+					"err":       err,
+					"payload":   p,
 				}).Fatal("Error received when attempting to delete an existing board.")
 			}
 		},
