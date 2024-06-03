@@ -7,7 +7,7 @@ It was inspired by, and takes influence from, the [**`honeymarker`**](https://gi
 ## Installation
 
 ```shell
-$ go install github.com/honeycombio/honeymarker@latest
+$ go install github.com/adz-anz/honeybadger@latest
 $ honeymarker    # (if $GOPATH/bin is in your path.)
 ```
 
