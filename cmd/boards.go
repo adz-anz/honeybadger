@@ -328,6 +328,8 @@ func newBoardsUpdateCmd() *cobra.Command {
 				}).Fatal("Error received when attempting to get the board to update.")
 			}
 
+			// TODO: Change this to only overwriting the existing board w/ the
+			// 		specified values, ignoring nulls.
 			var b = board{
 				Name:         bName,
 				Description:  bDescription,

@@ -67,13 +67,17 @@ func (p *Payload) GetResponse() (error) {
 	// in the event that a custom API Host is specified.
 	postURL, err := url.Parse(apiHost)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to parse URL %s", apiHost)
+		errMsg := fmt.Sprintf("Failed to parse URL %s: %s", apiHost, err)
 		return errors.New(errMsg)
 	}
 
 	postURL.Path = p.Path
 
-	req, _ := http.NewRequest(p.Method, postURL.String(), bytes.NewBuffer(p.Body))
+	req, err := http.NewRequest(p.Method, postURL.String(), bytes.NewBuffer(p.Body))
+	if err != nil {
+		errMsg := fmt.Sprintf("Failed to create request: %s", err)
+		return errors.New(errMsg)
+	}
 	req.Header.Set("User-Agent", UserAgent)
 	req.Header.Set("Content-Type", "application/json") // TODO: Do we move this to the individual functions?
 	req.Header.Add("X-Honeycomb-Team", configKey)
@@ -88,7 +92,8 @@ func (p *Payload) GetResponse() (error) {
 		fmt.Printf("Would have sent the following request:\n---\n")
 		reqOut, err := httputil.DumpRequest(req, true)
 		if err != nil {
-			return err
+			errMsg := fmt.Sprintf("Failed to dump the request to a byte sequence: %s", err)
+			return errors.New(errMsg)
 		}
 		fmt.Printf(string(reqOut))
 		return nil
@@ -97,7 +102,8 @@ func (p *Payload) GetResponse() (error) {
 	// Execute the request.
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		errMsg := fmt.Sprintf("Failed to execute the request: %s", err)
+		return errors.New(errMsg)
 	}
 	defer resp.Body.Close()
 
@@ -109,7 +115,8 @@ func (p *Payload) GetResponse() (error) {
 
 	err = json.NewDecoder(resp.Body).Decode(p.Response)
 	if err != nil {
-		return err
+		errMsg := fmt.Sprintf("Failed to decode response: %s", err)
+		return errors.New(errMsg)
 	}
 	
 	return nil
