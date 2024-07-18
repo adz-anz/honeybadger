@@ -176,14 +176,14 @@ func newDatasetDefinitionsUpdateCmd() *cobra.Command {
 					"dataset_definition": dd,
 				}).Fatal("Error received when attempting to marshal a dataset definition.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPatch,
 				Path:     "/1/dataset_definitions/" + dSlug,
 				Body:     bodyMarshal,
 				Response: &datasetDefinition{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newDatasetDefinitionsUpdateCmd",
@@ -247,13 +247,13 @@ func newDatasetDefinitionsGetCmd() *cobra.Command {
 			"\n" +
 			"The response returns an object with a Dataset Definition for each set Dataset Definition type.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
 				Path:     "/1/dataset_definitions/" + dSlug,
 				Response: &datasetDefinition{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newDatasetDefinitionsGetCmd",

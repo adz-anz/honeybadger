@@ -13,24 +13,24 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type Payload struct {
-	Method  string            `description:"The method to execute (PUT, POST, etc)."`
-	Path    string            `description:"The path, following the host."`
-	Headers map[string]string `description:"Additional headers to be sent with the request."`
-	Body    []byte            `description:"Anything that needs to be sent as the body with the request."`
-	Response interface{}      `description:"The response from the request."`
+type payload struct {
+	Method   string            `description:"The method to execute (PUT, POST, etc)."`
+	Path     string            `description:"The path, following the host."`
+	Headers  map[string]string `description:"Additional headers to be sent with the request."`
+	Body     []byte            `description:"Anything that needs to be sent as the body with the request."`
+	Response interface{}       `description:"The response from the request."`
 }
 
 var (
 	client = &http.Client{Timeout: 10 * time.Second}
 
-	// BuildID is set by CI
-	BuildID string = "dev" // TODO: set this to the actual build ID
+	// buildID is set by CI
+	buildID = "dev" // TODO: set this to the actual build ID
 
-	// UserAgent is what gets included in all http requests to the api
-	UserAgent string = fmt.Sprintf("%s/%s", appName, BuildID)
+	// userAgent is what gets included in all http requests to the api
+	userAgent string = fmt.Sprintf("%s/%s", appName, buildID)
 
-	Status200Codes = []int{
+	status200Codes = []int{
 		http.StatusOK,
 		http.StatusCreated,
 		http.StatusAccepted,
@@ -43,7 +43,7 @@ var (
 		http.StatusIMUsed,
 	}
 
-	ValidMethods = []string{
+	validMethods = []string{
 		http.MethodGet,
 		http.MethodHead,
 		http.MethodPost,
@@ -56,9 +56,9 @@ var (
 	}
 )
 
-func (p *Payload) GetResponse() (error) {
+func (p *payload) GetResponse(printResponse bool) error {
 	// Ensure that a valid method has been specified.
-	if !slices.Contains(ValidMethods, p.Method) {
+	if !slices.Contains(validMethods, p.Method) {
 		errMsg := fmt.Sprintf("Invalid method %s", p.Method)
 		return errors.New(errMsg)
 	}
@@ -78,7 +78,7 @@ func (p *Payload) GetResponse() (error) {
 		errMsg := fmt.Sprintf("Failed to create request: %s", err)
 		return errors.New(errMsg)
 	}
-	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Content-Type", "application/json") // TODO: Do we move this to the individual functions?
 	req.Header.Add("X-Honeycomb-Team", configKey)
 
@@ -108,7 +108,7 @@ func (p *Payload) GetResponse() (error) {
 	defer resp.Body.Close()
 
 	// Error if the response code is not a 2XX code.
-	if !slices.Contains(Status200Codes, resp.StatusCode) {
+	if !slices.Contains(status200Codes, resp.StatusCode) {
 		errMsg := fmt.Sprintf("Failed with %d and message: %s", resp.StatusCode, resp.Body)
 		return errors.New(errMsg)
 	}
@@ -118,25 +118,15 @@ func (p *Payload) GetResponse() (error) {
 		errMsg := fmt.Sprintf("Failed to decode response: %s", err)
 		return errors.New(errMsg)
 	}
-	
-	return nil
-}
 
-func (p *Payload) PrintResponse() (error) {
-	err := p.GetResponse()
-	if err != nil {
-		return err
+	if printResponse {
+		respMarshal, err := json.MarshalIndent(p.Response, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf(string(respMarshal))
 	}
 
-	// Output on dry run, skip execution of command.
-	if dryRun { return nil }
-
-	respMarshal, err := json.MarshalIndent(p.Response, "", "  ")
-	if err != nil {
-		return err
-	}
-	
-	fmt.Printf(string(respMarshal))
 	return nil
 }
-

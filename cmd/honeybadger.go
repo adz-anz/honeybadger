@@ -16,7 +16,7 @@ var (
 	configKey     string
 	apiHost       string
 	targetDataset string
-	dryRun		  bool
+	dryRun        bool
 )
 
 const (
@@ -114,6 +114,7 @@ func setCommandGroups(cmd *cobra.Command, rootCgs []commandGroup) {
 	})
 }
 
+// NewHoneybadgerCmd creates the root command and sets up the command groups
 func NewHoneybadgerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   appName,

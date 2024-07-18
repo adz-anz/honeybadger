@@ -76,7 +76,7 @@ func newMarkersCreateCmd() *cobra.Command {
 		mEndTime   int64
 		mMsg       string
 		mType      string
-		mUrl       string
+		mURL       string
 	)
 	cmd := &cobra.Command{
 		Use:     "create",
@@ -91,7 +91,7 @@ func newMarkersCreateCmd() *cobra.Command {
 				EndTime:   mEndTime,
 				Message:   mMsg,
 				Type:      mType,
-				URL:       mUrl,
+				URL:       mURL,
 			}
 			var bodyMarshal, err = json.Marshal(m)
 			if err != nil {
@@ -101,14 +101,14 @@ func newMarkersCreateCmd() *cobra.Command {
 					"marker":    m,
 				}).Fatal("Error received when attempting to marshal a marker.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPost,
 				Path:     "/1/markers/" + targetDataset,
 				Body:     bodyMarshal,
 				Response: &marker{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersCreateCmd",
@@ -126,7 +126,7 @@ func newMarkersCreateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&mMsg, "msg", "m", "", "A message to describe this specific Marker.")
 	cmd.Flags().StringVarP(&mType, "type", "t", "",
 		"Groups similar Markers. For example, 'deploys'. All Markers of the same type appear with the same color on the graph.")
-	cmd.Flags().StringVarP(&mUrl, "url", "u", "",
+	cmd.Flags().StringVarP(&mURL, "url", "u", "",
 		"A target for the marker. Clicking the marker text will take you to this URL.")
 
 	return cmd
@@ -142,13 +142,13 @@ func newMarkersListCmd() *cobra.Command {
 		Long: "Lists all Markers for a dataset. To list environment markers, use the __all__\n" +
 			"dataset (or omit the dataset) and an API key associated with the desired environment.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
 				Path:     "/1/markers/" + targetDataset,
 				Response: &[]marker{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersListCmd",
@@ -166,12 +166,12 @@ func newMarkersListCmd() *cobra.Command {
 // https://docs.honeycomb.io/api/tag/Markers#operation/updateMarker
 func newMarkersUpdateCmd() *cobra.Command {
 	var (
-		mId        string
+		mID        string
 		mStartTime int64
 		mEndTime   int64
 		mMsg       string
 		mType      string
-		mUrl       string
+		mURL       string
 	)
 	cmd := &cobra.Command{
 		Use:     "update",
@@ -181,12 +181,12 @@ func newMarkersUpdateCmd() *cobra.Command {
 			"_all__ dataset (or omit the dataset) and an API key associated with the desired environment.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var m = marker{
-				ID:        mId,
+				ID:        mID,
 				StartTime: mStartTime,
 				EndTime:   mEndTime,
 				Message:   mMsg,
 				Type:      mType,
-				URL:       mUrl,
+				URL:       mURL,
 			}
 			var bodyMarshal, err = json.Marshal(m)
 			if err != nil {
@@ -196,14 +196,14 @@ func newMarkersUpdateCmd() *cobra.Command {
 					"marker":    m,
 				}).Fatal("Error received when attempting to marshal a marker.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPut,
 				Path:     "/1/markers/" + targetDataset + "/" + m.ID,
 				Body:     bodyMarshal,
 				Response: &marker{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersUpdateCmd",
@@ -214,7 +214,7 @@ func newMarkersUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&mId, "id", "i", "", "The unique identifier (ID) of a Marker.")
+	cmd.Flags().StringVarP(&mID, "id", "i", "", "The unique identifier (ID) of a Marker.")
 	cmd.MarkFlagRequired("id")
 	cmd.Flags().Int64VarP(&mStartTime, "start_time", "s", 0,
 		"Indicates the time the Marker should be placed. If missing, defaults to the time the request arrives. Expressed in Unix Time.")
@@ -223,7 +223,7 @@ func newMarkersUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&mMsg, "msg", "m", "", "A message to describe this specific Marker.")
 	cmd.Flags().StringVarP(&mType, "type", "t", "",
 		"Groups similar Markers. For example, 'deploys'. All Markers of the same type appear with the same color on the graph.")
-	cmd.Flags().StringVarP(&mUrl, "url", "u", "",
+	cmd.Flags().StringVarP(&mURL, "url", "u", "",
 		"A target for the marker. Clicking the marker text will take you to this URL.")
 
 	return cmd
@@ -233,7 +233,7 @@ func newMarkersUpdateCmd() *cobra.Command {
 // https://docs.honeycomb.io/api/tag/Markers#operation/deleteMarker
 func newMarkersDeleteCmd() *cobra.Command {
 	var (
-		mId string
+		mID string
 	)
 
 	cmd := &cobra.Command{
@@ -244,15 +244,15 @@ func newMarkersDeleteCmd() *cobra.Command {
 			"dataset (or omit the dataset) and an API key associated with the desired environment.",
 		Run: func(cmd *cobra.Command, args []string) {
 			var m = marker{
-				ID: mId,
+				ID: mID,
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodDelete,
 				Path:     "/1/markers/" + targetDataset + "/" + m.ID,
 				Response: &marker{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersDeleteCmd",
@@ -263,7 +263,7 @@ func newMarkersDeleteCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&mId, "id", "i", "", "The unique identifier (ID) of a Marker.")
+	cmd.Flags().StringVarP(&mID, "id", "i", "", "The unique identifier (ID) of a Marker.")
 	cmd.MarkFlagRequired("id")
 
 	return cmd

@@ -69,13 +69,13 @@ func newAuthListCmd() *cobra.Command {
 			"Note: a Honeycomb Classic API key will return an empty string for both of the\n" +
 			"environment values.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
 				Path:     "/1/auth",
 				Response: &auth{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newAuthListCmd",

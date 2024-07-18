@@ -84,14 +84,14 @@ func newDatasetsCreateCmd() *cobra.Command {
 					"dataset":   d,
 				}).Fatal("Error received when attempting to marshal a dataset.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPost,
 				Path:     "/1/datasets",
 				Body:     bodyMarshal,
 				Response: &dataset{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newDatasetsCreateCmd",
@@ -122,13 +122,13 @@ func newDatasetsListCmd() *cobra.Command {
 		Short:   "List all Datasets.",
 		Long:    "Lists all Datasets for an environment.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
 				Path:     "/1/datasets",
 				Response: &[]dataset{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newDatasetsListCmd",
@@ -154,13 +154,13 @@ func newDatasetsGetCmd() *cobra.Command {
 		Short:   "Get a Dataset.",
 		Long:    "Get a single Dataset by slug.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
 				Path:     "/1/datasets/" + dSlug,
 				Response: &dataset{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newDatasetsGetCmd",
@@ -199,13 +199,13 @@ func newDatasetsDeleteCmd() *cobra.Command {
 			"use it. If you would like access to this endpoint despite the above-listed risks, please\n" +
 			"have your Honeycomb team owner contact Honeycomb Support or email Support.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodDelete,
 				Path:     "/1/datasets/" + dSlug,
 				Response: nil,
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newDatasetsDeleteCmd",
@@ -252,14 +252,14 @@ func newDatasetsUpdateCmd() *cobra.Command {
 					"dataset":   d,
 				}).Fatal("Error received when attempting to marshal a dataset.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPut,
 				Path:     "/1/datasets/" + dSlug,
 				Body:     bodyMarshal,
 				Response: &dataset{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newDatasetsUpdateCmd",

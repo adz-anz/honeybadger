@@ -80,14 +80,14 @@ func newMarkersSettingsCreateCmd() *cobra.Command {
 					"marker_setting": ms,
 				}).Fatal("Error received when attempting to marshal a marker setting.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPost,
 				Path:     "/1/marker_settings/" + targetDataset,
 				Body:     bodyMarshal,
 				Response: &markerSettings{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsCreateCmd",
@@ -118,13 +118,13 @@ func newMarkersSettingsGetCmd() *cobra.Command {
 		Long:    `TODO: Update this with the actual description.`,
 		Example: `Example`,
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
 				Path:     "/1/marker_settings/" + targetDataset,
 				Response: &[]markerSettings{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsGetCmd",
@@ -142,7 +142,7 @@ func newMarkersSettingsGetCmd() *cobra.Command {
 // https://docs.honeycomb.io/api/tag/Marker-Settings#operation/updateMarkerSettings
 func newMarkersSettingsUpdateCmd() *cobra.Command {
 	var (
-		msId    string
+		msID    string
 		msType  string
 		msColor string
 	)
@@ -155,7 +155,7 @@ func newMarkersSettingsUpdateCmd() *cobra.Command {
 		Example: `Example`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var ms = markerSettings{
-				ID:    msId,
+				ID:    msID,
 				Type:  msType,
 				Color: msColor,
 			}
@@ -168,14 +168,14 @@ func newMarkersSettingsUpdateCmd() *cobra.Command {
 					"marker_setting": ms,
 				}).Fatal("Error received when attempting to marshal a marker setting.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPut,
 				Path:     "/1/markers/" + targetDataset + "/" + ms.ID,
 				Body:     bodyMarshal,
 				Response: &markerSettings{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsUpdateCmd",
@@ -186,7 +186,7 @@ func newMarkersSettingsUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&msId, "id", "i", "", "The ID of the marker setting to update.")
+	cmd.Flags().StringVarP(&msID, "id", "i", "", "The ID of the marker setting to update.")
 	cmd.MarkFlagRequired("id")
 	cmd.Flags().StringVarP(&msType, "type", "t", "",
 		"Groups similar Markers. For example, 'deploys'. All Markers of the same type appears with the same color on the graph.")
@@ -202,7 +202,7 @@ func newMarkersSettingsUpdateCmd() *cobra.Command {
 // https://docs.honeycomb.io/api/tag/Marker-Settings#operation/deleteMarkerSettings
 func newMarkersSettingsDeleteCmd() *cobra.Command {
 	var (
-		msId string
+		msID string
 	)
 
 	cmd := &cobra.Command{
@@ -212,15 +212,15 @@ func newMarkersSettingsDeleteCmd() *cobra.Command {
 		Long:    `TODO: Update this with the actual description.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var ms = markerSettings{
-				ID: msId,
+				ID: msID,
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodDelete,
 				Path:     "/1/marker_settings/" + targetDataset + "/" + ms.ID,
 				Response: nil,
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newMarkersSettingsDeleteCmd",
@@ -231,7 +231,7 @@ func newMarkersSettingsDeleteCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&msId, "id", "i", "", "The ID of the marker to delete")
+	cmd.Flags().StringVarP(&msID, "id", "i", "", "The ID of the marker to delete")
 	cmd.MarkFlagRequired("id")
 
 	return cmd

@@ -68,7 +68,7 @@ func newBoardsCmd() *cobra.Command {
 // CUSTOM
 func newBoardsAddQueryCmd() *cobra.Command {
 	var (
-		bId                                  string
+		bID                                  string
 		bQueryCaption                        string
 		bQueryGraphSettingsHideMarkers       bool
 		bQueryGraphSettingsLogScale          bool
@@ -78,8 +78,8 @@ func newBoardsAddQueryCmd() *cobra.Command {
 		bQueryGraphSettingsOverlaidCharts    bool
 		bQueryStyle                          string
 		bQueryDataset                        string
-		bQueryId                             string
-		bQueryAnnotationId                   string
+		bQueryID                             string
+		bQueryAnnotationID                   string
 	)
 
 	cmd := &cobra.Command{
@@ -89,13 +89,13 @@ func newBoardsAddQueryCmd() *cobra.Command {
 		Long:    "Add a Query to a Board.",
 		Run: func(cmd *cobra.Command, args []string) {
 			// Get the board first, so we can append a new query to it.
-			var pGet = Payload{
+			var pGet = payload{
 				Method:   http.MethodGet,
-				Path:     "/1/boards/" + bId,
+				Path:     "/1/boards/" + bID,
 				Response: &board{},
 			}
 
-			var err = pGet.GetResponse()
+			var err = pGet.GetResponse(false)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsAddQueryCmd",
@@ -117,8 +117,8 @@ func newBoardsAddQueryCmd() *cobra.Command {
 				},
 				QueryStyle:        bQueryStyle,
 				Dataset:           bQueryDataset,
-				QueryID:           bQueryId,
-				QueryAnnotationID: bQueryAnnotationId,
+				QueryID:           bQueryID,
+				QueryAnnotationID: bQueryAnnotationID,
 			})
 
 			bodyMarshal, err := json.Marshal(pGet.Response)
@@ -129,14 +129,14 @@ func newBoardsAddQueryCmd() *cobra.Command {
 					"board":     pGet.Response,
 				}).Fatal("Error received when attempting to marshal a board.")
 			}
-			var pPut = Payload{
+			var pPut = payload{
 				Method:   http.MethodPut,
-				Path:     "/1/boards/" + bId,
+				Path:     "/1/boards/" + bID,
 				Body:     bodyMarshal,
 				Response: &board{},
 			}
 
-			err = pPut.PrintResponse()
+			err = pPut.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsAddQueryCmd",
@@ -147,7 +147,7 @@ func newBoardsAddQueryCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&bId, "id", "i", "",
+	cmd.Flags().StringVarP(&bID, "id", "i", "",
 		"The unique identifier (ID) of a Board.")
 	cmd.MarkFlagRequired("id")
 	cmd.Flags().StringVarP(&bQueryCaption, "caption", "c", "",
@@ -168,9 +168,9 @@ func newBoardsAddQueryCmd() *cobra.Command {
 		"How the query should be displayed on the board. Enum: \"graph\" \"table\" \"combo\"")
 	cmd.Flags().StringVarP(&bQueryDataset, "dataset", "d", "",
 		"The Dataset to Query. Required if using the deprecated query. Note: this field can take either name (\"My Dataset\") or slug (\"my_dataset\"); the response will always use the name.")
-	cmd.Flags().StringVarP(&bQueryId, "query_id", "q", "",
+	cmd.Flags().StringVarP(&bQueryID, "query_id", "q", "",
 		"The ID of a Query object. Cannot be used with query. Query IDs can be retrieved from the UI or from the Query API.")
-	cmd.Flags().StringVarP(&bQueryAnnotationId, "annotation_id", "a", "",
+	cmd.Flags().StringVarP(&bQueryAnnotationID, "annotation_id", "a", "",
 		"The ID of a Query Annotation that provides a name and description for the Query. The Query Annotation must apply to the query_id or query specified.")
 
 	return cmd
@@ -205,14 +205,14 @@ func newBoardsCreateCmd() *cobra.Command {
 					"board":     b,
 				}).Fatal("Error received when attempting to marshal a board.")
 			}
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodPost,
 				Path:     "/1/boards",
 				Body:     bodyMarshal,
 				Response: &board{},
 			}
 
-			err = p.PrintResponse()
+			err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsCreateCmd",
@@ -244,13 +244,13 @@ func newBoardsListCmd() *cobra.Command {
 			"\n" +
 			"Note: For Honeycomb Classic users, all boards within Classic will be returned.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
 				Path:     "/1/boards",
 				Response: &[]board{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsListCmd",
@@ -266,7 +266,7 @@ func newBoardsListCmd() *cobra.Command {
 
 func newBoardsGetCmd() *cobra.Command {
 	var (
-		bId string
+		bID string
 	)
 
 	cmd := &cobra.Command{
@@ -275,13 +275,13 @@ func newBoardsGetCmd() *cobra.Command {
 		Short:   "Get a single Board by ID.",
 		Long:    "Get a single Board by ID.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodGet,
-				Path:     "/1/boards/" + bId,
+				Path:     "/1/boards/" + bID,
 				Response: &board{},
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsGetCmd",
@@ -292,7 +292,7 @@ func newBoardsGetCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&bId, "id", "i", "", "The unique identifier (ID) of a Board.")
+	cmd.Flags().StringVarP(&bID, "id", "i", "", "The unique identifier (ID) of a Board.")
 	cmd.MarkFlagRequired("id")
 
 	return cmd
@@ -300,10 +300,10 @@ func newBoardsGetCmd() *cobra.Command {
 
 func newBoardsUpdateCmd() *cobra.Command {
 	var (
-		bId                                  string
-		bName                                string
-		bDescription                         string
-		bColumnLayout                        string
+		bID           string
+		bName         string
+		bDescription  string
+		bColumnLayout string
 	)
 
 	cmd := &cobra.Command{
@@ -313,13 +313,13 @@ func newBoardsUpdateCmd() *cobra.Command {
 		Long:    "Update a Board by ID, leaving existing queries as-is.",
 		Run: func(cmd *cobra.Command, args []string) {
 			// Get the board first, so we can append a new query to it.
-			var pGet = Payload{
+			var pGet = payload{
 				Method:   http.MethodGet,
-				Path:     "/1/boards/" + bId,
+				Path:     "/1/boards/" + bID,
 				Response: &board{},
 			}
 
-			var err = pGet.GetResponse()
+			var err = pGet.GetResponse(false)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsUpdateCmd",
@@ -345,14 +345,14 @@ func newBoardsUpdateCmd() *cobra.Command {
 					"board":     b,
 				}).Fatal("Error received when attempting to marshal a board.")
 			}
-			var pPut = Payload{
+			var pPut = payload{
 				Method:   http.MethodPut,
-				Path:     "/1/boards/" + bId,
+				Path:     "/1/boards/" + bID,
 				Body:     bodyMarshal,
 				Response: &board{},
 			}
 
-			err = pPut.PrintResponse()
+			err = pPut.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsUpdateCmd",
@@ -363,7 +363,7 @@ func newBoardsUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&bId, "id", "i", "", "The unique identifier (ID) of a Board.")
+	cmd.Flags().StringVarP(&bID, "id", "i", "", "The unique identifier (ID) of a Board.")
 	cmd.MarkFlagRequired("id")
 	cmd.Flags().StringVarP(&bName, "name", "n", "", "The name of the Board.")
 	cmd.MarkFlagRequired("name")
@@ -377,7 +377,7 @@ func newBoardsUpdateCmd() *cobra.Command {
 
 func newBoardsDeleteCmd() *cobra.Command {
 	var (
-		bId string
+		bID string
 	)
 
 	cmd := &cobra.Command{
@@ -386,13 +386,13 @@ func newBoardsDeleteCmd() *cobra.Command {
 		Short:   "Delete a single Board by ID.",
 		Long:    "Delete a single Board by ID.",
 		Run: func(cmd *cobra.Command, args []string) {
-			var p = Payload{
+			var p = payload{
 				Method:   http.MethodDelete,
-				Path:     "/1/boards/" + bId,
+				Path:     "/1/boards/" + bID,
 				Response: nil,
 			}
 
-			var err = p.PrintResponse()
+			var err = p.GetResponse(true)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"_function": "newBoardsDeleteCmd",
@@ -403,7 +403,7 @@ func newBoardsDeleteCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&bId, "id", "i", "", "The unique identifier (ID) of a Board.")
+	cmd.Flags().StringVarP(&bID, "id", "i", "", "The unique identifier (ID) of a Board.")
 	cmd.MarkFlagRequired("id")
 
 	return cmd
